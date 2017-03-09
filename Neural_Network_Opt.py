@@ -18,7 +18,7 @@ class NetworkLayer:
         self.n_outputs = weight_matrix.shape[0]
 
     def compute_output_vector(self, input_vector):
-        return sigmoid(self.weight_matrix.dot(input_vector)).reshape(self.n_outputs, 1)
+        return sigmoid(self.weight_matrix.dot(input_vector))
 
 
 class NeuralNetwork:
@@ -44,10 +44,21 @@ class NeuralNetwork:
         self.training_set, self.test_set, self.training_outputs, self.test_set_outputs = \
             train_test_split(self.trainX, self.trainY, test_size=0.4)
 
+        # network layers' output values in matrix form
         self.node_values = []
 
         # list of network_layer objects
         self.layer_list = []
+
+        # batch of training examples
+        self.batch_size = self.training_set.shape[0]
+        self.n_batches = int(self.training_set.shape[0]/self.batch_size)
+        self.batch = (self.training_set[0:self.batch_size]).T
+
+        # create the output vectors as a batch, it is sparse and uses memory at the cost of speed
+        self.output_vectors_mat = np.zeros((self.n_outputs, self.training_set.shape[0]))
+        for ex in range(self.training_set.shape[0]):
+            self.output_vectors_mat[self.training_outputs[ex], ex] = 1
 
         if n_layers == 1:
             weight_mat = np.random.rand(n_outputs, n_inputs)
@@ -70,16 +81,17 @@ class NeuralNetwork:
             self.layer_list.append(NetworkLayer(weight_mat))
 
 
+    #def create_batch(self, batch_index):
+
+
     def cross_val_split(self, frac):
         self.training_set, self.test_set, self.training_outputs, self.test_set_outputs = \
             train_test_split(self.trainX, self.trainY, test_size=frac)
 
-    def forward_prop(self, input_vec):
-        input_vec = input_vec.reshape(self.n_inputs, 1)
+    def forward_prop_batch(self):
 
-        # list of network layers' output values in vector form
-        self.node_values = []
-        self.node_values.append(input_vec)
+        self.node_values.append(self.batch)
+        input_vec = self.batch
         for layer in self.layer_list:
             # compute the output in vector form for each layer
             layer_output = layer.compute_output_vector(input_vec)
@@ -88,31 +100,42 @@ class NeuralNetwork:
             # append the outputs into node_values to use for backpropagation
             self.node_values.append(layer_output)
 
+        return layer_output
+
+    def forward_prop(self, input_vec):
+        input_vec = input_vec.reshape(self.n_inputs, 1)
+
+        for layer in self.layer_list:
+            # compute the output in vector form for each layer
+            layer_output = layer.compute_output_vector(input_vec)
+            # the output is the new input vector for the next layer
+            input_vec = layer_output
+
         return layer_output.reshape(self.n_outputs, 1)
 
-    def compute_cost(self):
-        J = np.zeros((self.n_outputs, 1))
-        for i in range(len(self.training_set)):
+    # def compute_cost(self):
+    #     J = np.zeros((self.n_outputs, 1))
+    #     for i in range(len(self.training_set)):
+    #
+    #         # construct output vector
+    #         y = [0 for i in range(self.n_outputs)]
+    #         # set the entry corresponding to the category to 1
+    #         y[self.training_outputs[i]]= 1
+    #         y = np.array(y).reshape(self.n_outputs, 1)
+    #
+    #         h = self.forward_prop(self.training_set[i])
+    #         ones = np.ones((self.n_outputs, 1))
+    #         # use numpy broadcasting to compute the cost in vector form
+    #         J += y*np.log(h) + (ones-y)*np.log(ones-h)
+    #
+    #     # after looping through training set add elements of the cost vector
+    #     J = (-1)*np.sum(J)/len(self.training_set)
+    #     return J
 
-            # construct output vector
-            y = [0 for i in range(self.n_outputs)]
-            # set the entry corresponding to the category to 1
-            y[self.training_outputs[i]]= 1
-            y = np.array(y).reshape(self.n_outputs, 1)
-
-            h = self.forward_prop(self.training_set[i])
-            ones = np.ones((self.n_outputs, 1))
-            # use numpy broadcasting to compute the cost in vector form
-            J += y*np.log(h) + (ones-y)*np.log(ones-h)
-
-        # after looping through training set add elements of the cost vector
-        J = (-1)*np.sum(J)/len(self.training_set)
-        return J
-
-    def train(self, alpha, max_iter):
+    def train(self, alpha, epoch_size):
         # J = self.compute_cost()
         i = 0
-        while i < max_iter:
+        while i < epoch_size:
             print(i)
             i += 1
             # compute the gradient and update weights in backpropagation
@@ -131,27 +154,25 @@ class NeuralNetwork:
 
             delta_mat_lst.append(np.zeros((rows, cols)))
 
-        # loop through training examples
-        for i in range(len(self.training_outputs)):
+        # loop through training examples, batch by batch
+        for i in range(self.n_batches):
 
             # forward propagate to compute node values
-            self.forward_prop(self.training_set[i].reshape(self.n_inputs, 1))
+            self.forward_prop_batch()
 
             delta_lst = [0 for i in range(self.n_layers)]
 
-            # create the output vector
-            output_vector = [0 for i in range(self.n_outputs)]
-            # set the entry corresponding to the category to 1
-            output_vector[self.training_outputs[i]] = 1
-            output_vector = np.array(output_vector).reshape(self.n_outputs, 1)
-
             # compute delta value for the output layer
-            delta_lst[-1] = self.node_values[-1] - output_vector
+            delta_lst[-1] = self.node_values[-1] - self.output_vectors_mat
+
             a_l = self.node_values[-2]
-            delta_mat_lst[-1] += delta_lst[-1].dot(a_l.T)
+
+            # MATH NOTE: sum of outer products for each training example can be expressed as matrix multiplication
+            delta_mat_lst[-1] = delta_lst[-1].dot(a_l.T)
 
             # iteratively compute remaining deltas
             for l in reversed(range(self.n_layers - 1)):
+
                 # get the weight matrix for the next layer
                 theta_mat = self.layer_list[l+1].weight_matrix
 
@@ -159,11 +180,11 @@ class NeuralNetwork:
                 a_l = self.node_values[l+1]
 
                 # compute delta for the previous level, using numpy broadcasting (*)
-                ones = np.ones((a_l.shape[0], 1))
+                ones = np.ones((a_l.shape[0], self.batch_size))
                 delta_lst[l] = (theta_mat.T.dot(delta_lst[l+1]))*a_l*(ones-a_l)
 
                 # update the delta matrix
-                delta_mat_lst[l] += delta_lst[l].dot(self.node_values[l].T)
+                delta_mat_lst[l] = delta_lst[l].dot(self.node_values[l].T)
 
         delta_mat_lst = [mat/len(self.training_outputs) for mat in delta_mat_lst]
 
@@ -209,3 +230,13 @@ class NeuralNetwork:
         for layer in self.layer_list:
             np.save(name+str(idx), layer.weight_matrix)
             idx += 1
+
+    def load_network(self, name, n_layers):
+        for l in range(n_layers):
+            layer_mat = np.load(name++str(l)+'.npy')
+            self.layer_list[l].weight_matrix = layer_mat
+
+    def load_network_layer(self, layer_name, layer_num):
+        layer_mat = np.load(layer_name+'.npy')
+        self.layer_list[layer_num].weight_matrix = layer_mat
+
