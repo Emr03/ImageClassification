@@ -23,15 +23,16 @@ for i in range(len(testX)):
 # plt.show()
 
 
-logistic = linear_model.LogisticRegression(verbose = 1)
+logistic = linear_model.LogisticRegression(verbose=1)
 
 print("Fitting data...")
 logistic.fit(trainX_flattened, trainY)
 
 print("Prediction testset...")
-print(logistic.predict(testX_flattened))
+pred = logistic.predict(testX_flattened)
 
-
+pred_df = pd.DataFrame(pred)
+pred_df.to_csv("predictions.csv", index_label="id")
 
 
 
