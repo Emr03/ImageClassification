@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
 import Neural_Network_Opt as NN
-
+import timeit
 
 def validate_tol(n_layers, n_inputs, n_nodes, alpha):
-    trainX_filename = 'trainX_gray_norm.npy'
-    trainY_filename = 'tinyY.npy'
+    trainX_filename = 'sift_data.npy'
+    trainY_filename = 'sift_data_labels.npy'
 
     max_iter = 10000
 
@@ -45,10 +45,34 @@ def validate_tol(n_layers, n_inputs, n_nodes, alpha):
     network.save_network('firstNN')
     # cv_tol.to_csv('cv_tol.csv')
 
+
+def test_run(n_layers, n_inputs, n_nodes, alpha):
+    trainX_filename = 'sift_data.npy'
+    trainY_filename = 'sift_data_labels.npy'
+    max_iter = 10000
+
+    network = NN.NeuralNetwork(n_inputs=n_inputs, n_outputs=40, n_nodes=n_nodes, n_layers=n_layers,
+                               trainX_filename=trainX_filename, trainY_filename=trainY_filename)
+    start = timeit.timeit()
+    network.train(alpha, max_iter)
+    end = timeit.timeit()
+    print('time', end - start)
+
+    training_accuracy = network.predict_training()
+    testing_accuracy = network.validate()
+    print('training acc', training_accuracy)
+    print('testing acc', testing_accuracy)
+    network.save_network('firstNN')
+
 if __name__ == "__main__":
 
-    n_layers = 2
-    n_nodes = int((64*64+1)/2)
-    n_inputs = 64*64+1
+    #get sift data
+    # sift_data = np.load('sift_data.npy')
+    # sift_labels = np.load('sift_data_labels.npy')
+
+
+    n_layers = 2 #one hidden layer
+    n_nodes = 64
+    n_inputs = 128
     alpha = 0.0001
-    validate_tol(n_layers, n_inputs, n_nodes, alpha)
+    test_run(n_layers, n_inputs, n_nodes, alpha)

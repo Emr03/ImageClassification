@@ -51,14 +51,9 @@ class NeuralNetwork:
         self.layer_list = []
 
         # batch of training examples
-        self.batch_size = self.training_set.shape[0]
-        self.n_batches = int(self.training_set.shape[0]/self.batch_size)
-        self.batch = (self.training_set[0:self.batch_size]).T
-
-        # create the output vectors as a batch, it is sparse and uses memory at the cost of speed
-        self.output_vectors_mat = np.zeros((self.n_outputs, self.training_set.shape[0]))
-        for ex in range(self.training_set.shape[0]):
-            self.output_vectors_mat[self.training_outputs[ex], ex] = 1
+        self.batch_size = 2000
+        self.n_batches = int(self.training_set.shape[0]/self.batch_size) + 1
+        self.at_batch = 0
 
         if n_layers == 1:
             weight_mat = np.random.rand(n_outputs, n_inputs)
@@ -81,8 +76,24 @@ class NeuralNetwork:
             self.layer_list.append(NetworkLayer(weight_mat))
 
 
-    #def create_batch(self, batch_index):
+    def create_batch(self):
 
+        self.at_batch += 1
+        start_lim = (self.at_batch-1) * self.batch_size
+
+        if self.at_batch == self.n_batches:
+            self.batch_size = self.training_set.shape[0]-start_lim
+            end_lim = -1
+
+        else:
+            end_lim = (self.at_batch)*self.batch_size
+
+        self.batch = (self.training_set[start_lim:end_lim]).T
+
+        # create the output vectors as a batch, it is sparse and uses memory at the cost of speed
+        self.output_vectors_mat = np.zeros((self.n_outputs, self.batch_size))
+        for ex in range(start_lim, end_lim):
+            self.output_vectors_mat[self.training_outputs[ex], ex] = 1
 
     def cross_val_split(self, frac):
         self.training_set, self.test_set, self.training_outputs, self.test_set_outputs = \
@@ -156,6 +167,8 @@ class NeuralNetwork:
 
         # loop through training examples, batch by batch
         for i in range(self.n_batches):
+
+            self.create_batch()
 
             # forward propagate to compute node values
             self.forward_prop_batch()
