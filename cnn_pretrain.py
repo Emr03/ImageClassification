@@ -18,7 +18,6 @@ trainY = np.load('tinyY.npy')
 testX = np.load('tinyX_test.npy') # (6600, 3, 64, 64)
 
 nb_train_samples = 26344
-nb_validation_samples = 6600
 nb_epoch = 40
 
 
@@ -94,7 +93,7 @@ def save_bottlebeck_features():
 def train_top_model():
 
     model = Sequential()
-    model.add(Flatten(input_shape=train_data.shape[1:]))
+    model.add(Flatten(input_shape=trainX.shape[1:]))
     model.add(Dense(256, activation='relu'))
     model.add(Dropout(0.5))
     model.add(Dense(1, activation='sigmoid'))
