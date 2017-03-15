@@ -7,7 +7,7 @@ from os.path import isfile, join
 #folderPath = '/home/snedogisawesome/Ima'
 
 #files = [f for f in listdir(folderPath) if isFile(join(folderPath, f))]
-imagePath = '/home/snedogisawesome/ImageClassification/images_test/img_CV_99.jpg'
+imagePath = '/home/snedogisawesome/ImageClassification/images_test/img_CV2_99.jpg'
 modelFullPath = '/tmp/output_graph.pb'
 labelsFullPath = '/tmp/output_labels.txt'
 
@@ -19,8 +19,13 @@ def create_graph():
 
 
 def predict():
-    image_data = tf.gfile.FastGFile(imagePath, 'rb').read()
     answer = None
+
+    if not tf.gfile.Exists(imagePath):
+        tf.logging.fatal('File does not exist %s', imagePath)
+        return answer
+
+    image_data = tf.gfile.FastGFile(imagePath, 'rb').read()
     create_graph()
 
     with tf.Session() as sess:
