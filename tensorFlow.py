@@ -4,10 +4,10 @@ from os import listdir
 from os.path import isfile, join
 
 
-folderPath = '/home/snedogisawesome/Ima'
+#folderPath = '/home/snedogisawesome/Ima'
 
-files = [f for f in listdir(folderPath) if isFile(join(folderPath, f))]
-imagePath = '/tmp/imagenet/flower.jpg'
+#files = [f for f in listdir(folderPath) if isFile(join(folderPath, f))]
+imagePath = '/home/snedogisawesome/ImageClassification/images_test/img_CV_99.jpg'
 modelFullPath = '/tmp/output_graph.pb'
 labelsFullPath = '/tmp/output_labels.txt'
 
