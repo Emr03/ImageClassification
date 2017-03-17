@@ -4,7 +4,7 @@ The second project for COMP 551 - Applied Machine Learning.
 This repository contains various algorithms used to classify images into
 forty categories.
 Using the InceptionV3 model, we achieved a score of 89.152% accuracy on
-unseen testing data.
+an unseen testing data.
 
 ## Dependencies
 
