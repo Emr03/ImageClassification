@@ -34,8 +34,12 @@ To run the Logistic Regression model, run:
 ```
 python LogisticRegression.py
 ```
+To run the Neural Network model, run:
 
+```
+python Neural_Network.py
+```
 
 
 ## Included directories
-
+The output file for the logistic regression model are found in the 
