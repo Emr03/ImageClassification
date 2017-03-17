@@ -23,6 +23,11 @@ To run the Keras model, run:
 ```
 python cnn_pretrain.py
 ```
+To run the InceptionV3 model, run:
+
+```
+python tensorFlow.py
+```
 
 
 
