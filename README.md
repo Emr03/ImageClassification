@@ -29,6 +29,12 @@ To run the InceptionV3 model, run:
 python tensorFlow.py
 ```
 
+To run the Logistic Regression model, run:
+
+```
+python LogisticRegression.py
+```
+
 
 
 ## Included directories
